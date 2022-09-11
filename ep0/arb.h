@@ -18,9 +18,34 @@ typedef boost::graph_traits<Arb>::vertex_descriptor Vertex;
    these objects are only accessed by the student's code */
 class HeadStart {
 public:
-  HeadStart(int info) : super_useful_info(info) {}
+  HeadStart(int number_of_vertices) : number_of_vertices(number_of_vertices) {
+    in_time =  new int[number_of_vertices];
+    out_time = new int[number_of_vertices];
+
+    for (int i = 0; i < number_of_vertices; i++)
+      in_time[i] = out_time[i] = 0;
+  }
+
+  void set_in_time(int vertex, int time) {
+    in_time[vertex] = time;
+  }
+
+  void set_out_time(int vertex, int time) {
+    out_time[vertex] = time;
+  }
+
+  int get_in_time(int vertex) const {
+    return in_time[vertex];
+  }
+
+  int get_out_time(int vertex) const {
+    return out_time[vertex];
+  }
+
 private:
-  int super_useful_info;
+  int * in_time;
+  int * out_time;
+  int number_of_vertices;
 };
 
 #endif // #ifndef ARB_H
