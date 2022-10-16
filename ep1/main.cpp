@@ -15,7 +15,8 @@ class HeadStart {
       is_in_stack = new bool[number_of_vertices];
       discovered =  new int[number_of_vertices];
       minimum_node = new int[number_of_vertices];
-      sccCounter = 0;
+      order = new int[number_of_vertices];
+      sccCounter = 1;
       
       for (int i = 0; i < number_of_vertices; i++) {
         is_in_stack[i] = false;
@@ -26,12 +27,14 @@ class HeadStart {
       delete [] minimum_node;
       delete [] discovered;
       delete [] is_in_stack;
+      delete [] order;
     }
 
     std::stack<int> vertices_stack;
     int * minimum_node;
     int * discovered;
     bool *is_in_stack;
+    int *order;
     int number_of_vertices;
     int number_of_arcs;
     int sccCounter;
@@ -70,9 +73,11 @@ void depthSearch(Graph& graph, int& counter, int vertex, HeadStart& data) {
   if (data.discovered[vertex] == data.minimum_node[vertex]) {
     while (data.vertices_stack.top() != vertex) {
       data.is_in_stack[data.vertices_stack.top()] = false;
+      data.order[data.vertices_stack.top()] = data.sccCounter;
       data.vertices_stack.pop();
     }
     data.is_in_stack[data.vertices_stack.top()] = false;
+    data.order[data.vertices_stack.top()] = data.sccCounter;
     data.vertices_stack.pop();
     data.sccCounter++;
   }
@@ -153,12 +158,10 @@ void reach(Graph& graph, int origin, int destiny, int number_of_vertices) {
   delete [] predecessor;
 }
 
-void print_true_assignments(HeadStart data) {
-
+void print_true_assignments(HeadStart& data) {
   for (int i = 0; i < data.number_of_vertices / 2; i++)
-    std::cout << (data.minimum_node[i] > data.minimum_node[i + data.number_of_vertices / 2] ) << " ";
+    std::cout << (data.order[i] < data.order[i + data.number_of_vertices / 2] ) << " ";
 }
-
 
 void outputSolution(Graph& graph, HeadStart& data, int d) {
   int counter = 0;
@@ -172,7 +175,7 @@ void outputSolution(Graph& graph, HeadStart& data, int d) {
  
   if (d == 0) {
     for (int current_vertex = 0; current_vertex < data.number_of_vertices / 2; current_vertex++)
-      if (data.minimum_node[current_vertex +  data.number_of_vertices/2] == data.minimum_node[current_vertex]) {
+      if (data.order[current_vertex +  data.number_of_vertices/2] == data.order[current_vertex]) {
         hasSolution = false;
         std::cout << "NO\n" << current_vertex + 1 << "\n";
         reach(graph, current_vertex, current_vertex +  data.number_of_vertices/2, data.number_of_vertices);
@@ -187,9 +190,9 @@ void outputSolution(Graph& graph, HeadStart& data, int d) {
   }
   else if (d == 1) {
     for (int current_vertex = 0; current_vertex < data.number_of_vertices - 1; current_vertex++) 
-      std::cout << data.minimum_node[current_vertex] << " ";
+      std::cout << data.order[current_vertex] << " ";
 
-    std::cout << data.minimum_node[data.number_of_vertices - 1] << "\n";  
+    std::cout << data.order[data.number_of_vertices - 1] << "\n";  
   }
   else
     print_graph(graph, data.number_of_vertices, data.number_of_arcs);
@@ -212,7 +215,7 @@ void read_graph(std::istream& in, int n, int m, int d) {
   outputSolution(graph, data, d);
 }
 
-int main (int argc, char** argv) {
+int main(int argc, char** argv) {
   unsigned long int d, n, m;
   std::cin >> d >> n >> m;
   
