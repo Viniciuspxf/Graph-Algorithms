@@ -6,12 +6,12 @@
 
 typedef boost::adjacency_list<boost::vecS,
                               boost::vecS,
-                              boost::directedS> Arb;
-typedef boost::graph_traits<Arb>::vertex_descriptor Vertex;
+                              boost::directedS> Graph;
+typedef boost::graph_traits<Graph>::vertex_descriptor Vertex;
 
 class HeadStart {
   public:
-    HeadStart(int number_of_vertices) : number_of_vertices(number_of_vertices) {
+    HeadStart(int number_of_vertices, int number_of_arcs) : number_of_vertices(number_of_vertices), number_of_arcs(number_of_arcs) {
       is_in_stack = new bool[number_of_vertices];
       discovered =  new int[number_of_vertices];
       minimum_node = new int[number_of_vertices];
@@ -23,46 +23,45 @@ class HeadStart {
       }
     }
     ~HeadStart() {
-      delete [] status;
       delete [] minimum_node;
       delete [] discovered;
       delete [] is_in_stack;
     }
 
     std::stack<int> vertices_stack;
-    int * status;
     int * minimum_node;
     int * discovered;
     bool *is_in_stack;
     int number_of_vertices;
+    int number_of_arcs;
     int sccCounter;
 };
 
 int convertVertexToInteger(int vertex, int number_of_literals) {
   return vertex >= number_of_literals ? -vertex + number_of_literals - 1 : vertex + 1;
 }
+
 int convertToValidInteger(int integer, int number_of_literals) {
   return integer > 0 ? integer - 1 : -integer - 1 + number_of_literals;
 }
 
-
-void depthSearch(Arb& arb, int& counter, int vertex, HeadStart& data) {
+void depthSearch(Graph& graph, int& counter, int vertex, HeadStart& data) {
   int current_vertex;
-  boost::graph_traits<Arb>::out_edge_iterator vertex_it, vertex_end;
+  boost::graph_traits<Graph>::out_edge_iterator vertex_it, vertex_end;
   
   data.discovered[vertex] = data.minimum_node[vertex] = ++counter;
   data.vertices_stack.push(vertex);
   data.is_in_stack[vertex] = true;
 
-  for (std::tie(vertex_it, vertex_end) = boost::out_edges(vertex, arb);
+  for (std::tie(vertex_it, vertex_end) = boost::out_edges(vertex, graph);
     vertex_it != vertex_end; ++vertex_it) {
 
-    current_vertex = boost::target(*vertex_it, arb);
+    current_vertex = boost::target(*vertex_it, graph);
 
     if (data.discovered[current_vertex] == -1)
-      depthSearch(arb, counter, current_vertex, data);
+      depthSearch(graph, counter, current_vertex, data);
 
-    else if (data.is_in_stack[current_vertex])
+    if (data.is_in_stack[current_vertex])
       data.minimum_node[vertex] = data.minimum_node[current_vertex] < data.minimum_node[vertex] ?  
                                   data.minimum_node[current_vertex] : data.minimum_node[vertex];
 
@@ -79,22 +78,38 @@ void depthSearch(Arb& arb, int& counter, int vertex, HeadStart& data) {
   }
 }
 
-void reach_visit(Arb& arb, int origin, bool *visited, int * predecessor) {
+void reach_visit(Graph& graph, int origin, bool *visited, int * predecessor) {
   visited[origin] = true;
   int current_vertex;
-  boost::graph_traits<Arb>::out_edge_iterator vertex_it, vertex_end;
+  boost::graph_traits<Graph>::out_edge_iterator vertex_it, vertex_end;
 
-  for (std::tie(vertex_it, vertex_end) = boost::out_edges(origin, arb);
+  for (std::tie(vertex_it, vertex_end) = boost::out_edges(origin, graph);
     vertex_it != vertex_end; ++vertex_it) {
 
-    current_vertex = boost::target(*vertex_it, arb);
+    current_vertex = boost::target(*vertex_it, graph);
 
     if (!visited[current_vertex]){
       predecessor[current_vertex] = origin;
-      reach_visit(arb, current_vertex, visited, predecessor);
+      reach_visit(graph, current_vertex, visited, predecessor);
     }
   }
   
+}
+
+void print_graph(Graph graph, int number_of_vertices, int number_of_arcs) {
+  int current_vertex;
+  std::cout << number_of_vertices << " " <<  number_of_arcs << "\n";
+  for (int vertex = 0; vertex < number_of_vertices; vertex++) {
+
+    boost::graph_traits<Graph>::out_edge_iterator vertex_it, vertex_end;
+
+    for (std::tie(vertex_it, vertex_end) = boost::out_edges(vertex, graph);
+      vertex_it != vertex_end; ++vertex_it) {
+
+      current_vertex = boost::target(*vertex_it, graph);
+      std::cout << convertVertexToInteger(vertex, number_of_vertices / 2) << " " << convertVertexToInteger(current_vertex, number_of_vertices / 2) << "\n";
+    }
+  }
 }
 
 void build_path(int * predecessor, int origin, int destiny, int number_of_vertices) {
@@ -121,7 +136,7 @@ void build_path(int * predecessor, int origin, int destiny, int number_of_vertic
 
 }
 
-void reach(Arb& arb, int origin, int destiny, int number_of_vertices) {
+void reach(Graph& graph, int origin, int destiny, int number_of_vertices) {
   bool *visited = new bool[number_of_vertices];
   int *predecessor = new int[number_of_vertices];
 
@@ -131,21 +146,21 @@ void reach(Arb& arb, int origin, int destiny, int number_of_vertices) {
   }
 
   predecessor[origin] = origin;
-  reach_visit(arb, origin, visited, predecessor);
+  reach_visit(graph, origin, visited, predecessor);
   build_path(predecessor, origin, destiny, number_of_vertices);
 
   delete [] visited;
   delete [] predecessor;
 }
 
-void outputSolution(Arb& arb, HeadStart& data, int d) {
+void outputSolution(Graph& graph, HeadStart& data, int d) {
   int counter = 0;
   bool hasSolution = true;
 
   for (int current_vertex = 0; current_vertex < data.number_of_vertices; current_vertex++) {
 
     if (data.discovered[current_vertex] == -1)
-      depthSearch(arb, counter, current_vertex, data);
+      depthSearch(graph, counter, current_vertex, data);
   }
  
   if (d == 0) {
@@ -153,8 +168,8 @@ void outputSolution(Arb& arb, HeadStart& data, int d) {
       if (data.minimum_node[current_vertex +  data.number_of_vertices/2] == data.minimum_node[current_vertex]) {
         hasSolution = false;
         std::cout << "NO\n" << current_vertex + 1 << "\n";
-        reach(arb, current_vertex, current_vertex +  data.number_of_vertices/2, data.number_of_vertices);
-        reach(arb, current_vertex +  data.number_of_vertices/2, current_vertex, data.number_of_vertices);
+        reach(graph, current_vertex, current_vertex +  data.number_of_vertices/2, data.number_of_vertices);
+        reach(graph, current_vertex +  data.number_of_vertices/2, current_vertex, data.number_of_vertices);
         break;
       }
 
@@ -166,35 +181,34 @@ void outputSolution(Arb& arb, HeadStart& data, int d) {
     for (int current_vertex = 0; current_vertex < data.number_of_vertices - 1; current_vertex++) 
       std::cout << data.minimum_node[current_vertex] << " ";
 
-    std::cout << data.minimum_node[data.number_of_vertices - 1] << "\n"; 
+    std::cout << data.minimum_node[data.number_of_vertices - 1] << "\n";  
   }
-  else {
-
-  }
+  else
+    print_graph(graph, data.number_of_vertices, data.number_of_arcs);
 }
 
-void read_arb(std::istream& in, int n, int m, int d) {
+void read_graph(std::istream& in, int n, int m, int d) {
   int a, b;
   int number_of_vertices = 2*n;
   int number_of_clauses = m;
-  HeadStart data(number_of_vertices);
+  HeadStart data(number_of_vertices, 2*number_of_clauses);
  
-  Arb arb(number_of_vertices);
+  Graph graph(number_of_vertices);
 
   while (number_of_clauses--) {
     in >> a >> b;
-    boost::add_edge(convertToValidInteger(-a, n), convertToValidInteger(b, n), arb);
-    boost::add_edge(convertToValidInteger(-b, n), convertToValidInteger(a, n), arb);
+    boost::add_edge(convertToValidInteger(-a, n), convertToValidInteger(b, n), graph);
+    boost::add_edge(convertToValidInteger(-b, n), convertToValidInteger(a, n), graph);
   }
 
-  outputSolution(arb, data, d);
+  outputSolution(graph, data, d);
 }
 
 int main (int argc, char** argv) {
   unsigned long int d, n, m;
   std::cin >> d >> n >> m;
   
-  read_arb(std::cin, n, m, d);
+  read_graph(std::cin, n, m, d);
 
   return EXIT_SUCCESS;
 }
