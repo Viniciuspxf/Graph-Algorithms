@@ -153,6 +153,13 @@ void reach(Graph& graph, int origin, int destiny, int number_of_vertices) {
   delete [] predecessor;
 }
 
+void print_true_assignments(HeadStart data) {
+
+  for (int i = 0; i < data.number_of_vertices / 2; i++)
+    std::cout << (data.minimum_node[i] > data.minimum_node[i + data.number_of_vertices / 2] ) << " ";
+}
+
+
 void outputSolution(Graph& graph, HeadStart& data, int d) {
   int counter = 0;
   bool hasSolution = true;
@@ -175,6 +182,7 @@ void outputSolution(Graph& graph, HeadStart& data, int d) {
 
     if (hasSolution) {
       std::cout << "YES\n";
+      print_true_assignments(data);
     }
   }
   else if (d == 1) {
