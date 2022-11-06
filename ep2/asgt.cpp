@@ -13,7 +13,7 @@ class HeadStart {
   public:
     HeadStart(int number_of_vertices) {
       this->number_of_vertices = number_of_vertices;
-      bcc_counter = 0;
+      bcc_counter = 1;
 
       discovered =  new int[number_of_vertices];
       minimum_node = new int[number_of_vertices];
