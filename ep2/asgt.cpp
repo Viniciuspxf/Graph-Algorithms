@@ -3,6 +3,15 @@
 #include <utility>
 #include <iostream>
 
+struct hash_pair {
+    template <class T1, class T2>
+    size_t operator()(const std::pair<T1, T2>& p) const
+    {
+        auto hash = std::hash<std::string>{}(std::to_string(p.first) + "|"+ std::to_string(p.second));
+        return hash;
+    }
+};
+
 std::pair<int, int> ordered_pair(std::pair<int, int> argument) {
   
   return  argument.first < argument.second ? argument : std::make_pair(argument.second, argument.first);
@@ -34,7 +43,7 @@ class HeadStart {
     }
 
     std::stack<std::pair<int, int>> edges_stack;
-    std::map<std::pair<int, int>, boost::detail::edge_desc_impl<boost::undirected_tag, std::size_t>> mapping;
+    std::unordered_map<std::pair<int, int>, boost::detail::edge_desc_impl<boost::undirected_tag, std::size_t>, hash_pair> mapping;
     int number_of_vertices;
     int * minimum_node;
     int * discovered;
