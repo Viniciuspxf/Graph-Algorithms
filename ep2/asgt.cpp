@@ -17,10 +17,12 @@ class HeadStart {
 
       discovered =  new int[number_of_vertices];
       minimum_node = new int[number_of_vertices];
-      parent = new int[number_of_vertices];      
+      parent = new int[number_of_vertices];     
+      children = new int[number_of_vertices]; 
     
       for (int i = 0; i < number_of_vertices; i++) {
         parent[i] = discovered[i] = minimum_node[i] = -1;
+        children[i] = 0;
       }
     }
 
@@ -28,6 +30,7 @@ class HeadStart {
       delete [] minimum_node;
       delete [] discovered;
       delete [] parent;
+      delete [] children;
     }
 
     std::stack<std::pair<int, int>> edges_stack;
@@ -36,6 +39,7 @@ class HeadStart {
     int * minimum_node;
     int * discovered;
     int *parent;
+    int *children;
     int bcc_counter;
 
 };
@@ -88,6 +92,8 @@ void depthSearch(Graph& graph, int& counter, int vertex, HeadStart& data) {
     }
 
   }
+
+  data.children[vertex] = visitCounter;
 }
 
 void compute_bcc (Graph &g, bool fill_cutvxs, bool fill_bridges)
@@ -127,6 +133,10 @@ void compute_bcc (Graph &g, bool fill_cutvxs, bool fill_bridges)
   for (const auto& edge : boost::make_iterator_range(boost::edges(g))) {
     g[edge].bridge = headStart.discovered[edge.m_source] > headStart.discovered[edge.m_target] ?  false :
       headStart.minimum_node[edge.m_target] > headStart.discovered[edge.m_source];
+  }
 
+  for (const auto& vertex : boost::make_iterator_range(boost::vertices(g))) {
+    g[vertex].cutvertex = headStart.parent[vertex] == -1 ? headStart.children[vertex] >= 2 : 
+      g[vertex].cutvertex;
   }
 }
