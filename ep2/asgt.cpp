@@ -65,10 +65,13 @@ void depthSearch(Graph& graph, int& counter, int vertex, HeadStart& data) {
 
 
       if ((data.discovered[vertex] == 1 && visitCounter > 1) || (data.discovered[vertex] > 1 && data.minimum_node[current_vertex] >= data.discovered[vertex])) {
+        graph[vertex].cutvertex = true;
+
         while (data.edges_stack.top().first != vertex || data.edges_stack.top().second != current_vertex) {
             graph[data.mapping[ordered_pair(data.edges_stack.top())]].bcc = data.bcc_counter;
             data.edges_stack.pop();
         }
+
         graph[data.mapping[ordered_pair(data.edges_stack.top())]].bcc = data.bcc_counter;
         data.edges_stack.pop();
         data.bcc_counter++;
@@ -93,12 +96,10 @@ void compute_bcc (Graph &g, bool fill_cutvxs, bool fill_bridges)
   HeadStart headStart(boost::num_vertices(g));
   int counter = 0;
 
-
-  /* fill everything with dummy values */
   for (const auto& vertex : boost::make_iterator_range(boost::vertices(g))) {
     g[vertex].cutvertex = false;
   }
-
+  
   for (const auto& edge : boost::make_iterator_range(boost::edges(g))) {
     g[edge].bcc = 0;
     g[edge].bridge = false;
@@ -123,4 +124,9 @@ void compute_bcc (Graph &g, bool fill_cutvxs, bool fill_bridges)
     }
   }
 
+  for (const auto& edge : boost::make_iterator_range(boost::edges(g))) {
+    g[edge].bridge = headStart.discovered[edge.m_source] > headStart.discovered[edge.m_target] ?  false :
+      headStart.minimum_node[edge.m_target] > headStart.discovered[edge.m_source];
+
+  }
 }

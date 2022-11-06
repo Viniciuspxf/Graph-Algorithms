@@ -1,7 +1,7 @@
 make
 make test
 
-for D in $(seq 0 0); do
+for D in $(seq 0 2); do
   cd checker
   g++ checker-${D}.cpp
   cd ..
