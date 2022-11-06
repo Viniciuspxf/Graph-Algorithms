@@ -53,7 +53,7 @@ void depthSearch(Graph& graph, int& counter, int vertex, HeadStart& data) {
     vertex_it != vertex_end; ++vertex_it) {
 
     current_vertex = boost::target(*vertex_it, graph);
-    std::cout << "vertex " << vertex << " current_vertex " << current_vertex << "\n";
+
     if (data.discovered[current_vertex] == -1) {
       visitCounter++;
       data.edges_stack.push({vertex, current_vertex});
@@ -102,9 +102,8 @@ void compute_bcc (Graph &g, bool fill_cutvxs, bool fill_bridges)
   for (const auto& edge : boost::make_iterator_range(boost::edges(g))) {
     g[edge].bcc = 0;
     g[edge].bridge = false;
-    std::cout << "m_source:" << edge.m_source << "m_target:" << edge.m_target << "\n";
+
     headStart.mapping[ordered_pair({edge.m_source, edge.m_target})] = edge;
-    std::cout << " {m_source, m_target} "<< headStart.mapping[{edge.m_source, edge.m_target}] << "\n";
   }
 
   for (const auto& vertex : boost::make_iterator_range(boost::vertices(g))) {
@@ -114,14 +113,8 @@ void compute_bcc (Graph &g, bool fill_cutvxs, bool fill_bridges)
     bool stackIsNotEmpty = false;
     while (!headStart.edges_stack.empty()) {
         stackIsNotEmpty = true;
-        std::cout << "pair " << headStart.edges_stack.top().first <<  "second " << headStart.edges_stack.top().second <<"\n";
-        std::cout.flush();
-        std::cout << " {1,4} "<< headStart.mapping[{1,4}] << "\n";
-        std::cout.flush();
         std::map<std::pair<int,int> , int> teste;
 
-        std::cout << "Teste: " << teste[{1, 2}] << "\n";
-        std::cout.flush();
         g[headStart.mapping[ordered_pair(headStart.edges_stack.top())]].bcc = headStart.bcc_counter;
         headStart.edges_stack.pop();
     }
