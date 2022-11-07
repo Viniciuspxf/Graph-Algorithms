@@ -65,13 +65,13 @@ int main(){
 
             if(student_str != sol_str){
                 is_correct = false;
-                cout << "FAILED TEST - EXPETED: " << sol_str << " OUTPUT: " <<  student_str << "\n"; 
+                cout << "FAILED TEST - EXPECTED: " << sol_str << " OUTPUT: " <<  student_str << "\n"; 
                 break;
             }
 
   	    }
         if (is_correct) {
-            cout << "CORRECT - ALL BRIDGESs FOUND" << "\n";
+            cout << "CORRECT - ALL BRIDGES FOUND" << "\n";
             correct++;
         }
     }

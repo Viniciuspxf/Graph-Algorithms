@@ -3,21 +3,6 @@
 #include <utility>
 #include <iostream>
 
-struct hash_pair {
-    template <class T1, class T2>
-    size_t operator()(const std::pair<T1, T2>& p) const
-    {
-        auto hash = std::hash<std::string>{}(std::to_string(p.first) + "|"+ std::to_string(p.second));
-        return hash;
-    }
-};
-
-std::pair<int, int> ordered_pair(std::pair<int, int> argument) {
-  
-  return  argument.first < argument.second ? argument : std::make_pair(argument.second, argument.first);
-
-}
-
 class HeadStart {
   public:
     HeadStart(int number_of_vertices) {
@@ -42,8 +27,7 @@ class HeadStart {
       delete [] children;
     }
 
-    std::stack<std::pair<int, int>> edges_stack;
-    std::unordered_map<std::pair<int, int>, boost::detail::edge_desc_impl<boost::undirected_tag, std::size_t>, hash_pair> mapping;
+    std::stack<boost::detail::edge_desc_impl<boost::undirected_tag, std::size_t>> edges_stack;
     int number_of_vertices;
     int * minimum_node;
     int * discovered;
@@ -57,19 +41,17 @@ class HeadStart {
 void depthSearch(Graph& graph, int& counter, int vertex, HeadStart& data) {
   int current_vertex;
   int visitCounter = 0;
-  boost::graph_traits<Graph>::out_edge_iterator vertex_it, vertex_end;
   
   data.discovered[vertex] = data.minimum_node[vertex] = ++counter;
 
 
-  for (std::tie(vertex_it, vertex_end) = boost::out_edges(vertex, graph);
-    vertex_it != vertex_end; ++vertex_it) {
+  for (const auto& edge : boost::make_iterator_range(boost::out_edges(vertex, graph))) {
 
-    current_vertex = boost::target(*vertex_it, graph);
+    current_vertex = edge.m_target;
 
     if (data.discovered[current_vertex] == -1) {
       visitCounter++;
-      data.edges_stack.push({vertex, current_vertex});
+      data.edges_stack.push(edge);
       data.parent[current_vertex] = vertex;
       depthSearch(graph, counter, current_vertex, data);
 
@@ -80,12 +62,12 @@ void depthSearch(Graph& graph, int& counter, int vertex, HeadStart& data) {
       if ((data.discovered[vertex] == 1 && visitCounter > 1) || (data.discovered[vertex] > 1 && data.minimum_node[current_vertex] >= data.discovered[vertex])) {
         graph[vertex].cutvertex = true;
 
-        while (data.edges_stack.top().first != vertex || data.edges_stack.top().second != current_vertex) {
-            graph[data.mapping[ordered_pair(data.edges_stack.top())]].bcc = data.bcc_counter;
+        while (data.edges_stack.top().m_source != vertex || data.edges_stack.top().m_target != current_vertex) {
+            graph[data.edges_stack.top()].bcc = data.bcc_counter;
             data.edges_stack.pop();
         }
 
-        graph[data.mapping[ordered_pair(data.edges_stack.top())]].bcc = data.bcc_counter;
+        graph[data.edges_stack.top()].bcc = data.bcc_counter;
         data.edges_stack.pop();
         data.bcc_counter++;
       }
@@ -96,7 +78,7 @@ void depthSearch(Graph& graph, int& counter, int vertex, HeadStart& data) {
       data.minimum_node[vertex] = data.discovered[current_vertex] < data.minimum_node[vertex] ?  
                                   data.discovered[current_vertex] : data.minimum_node[vertex];
       if (data.discovered[current_vertex] < data.discovered[vertex]) {
-        data.edges_stack.push({vertex, current_vertex});        
+        data.edges_stack.push(edge);        
       }
     }
 
@@ -118,8 +100,6 @@ void compute_bcc (Graph &g, bool fill_cutvxs, bool fill_bridges)
   for (const auto& edge : boost::make_iterator_range(boost::edges(g))) {
     g[edge].bcc = 0;
     g[edge].bridge = false;
-
-    headStart.mapping[ordered_pair({edge.m_source, edge.m_target})] = edge;
   }
 
   for (const auto& vertex : boost::make_iterator_range(boost::vertices(g))) {
@@ -129,9 +109,8 @@ void compute_bcc (Graph &g, bool fill_cutvxs, bool fill_bridges)
     bool stackIsNotEmpty = false;
     while (!headStart.edges_stack.empty()) {
         stackIsNotEmpty = true;
-        std::map<std::pair<int,int> , int> teste;
 
-        g[headStart.mapping[ordered_pair(headStart.edges_stack.top())]].bcc = headStart.bcc_counter;
+        g[headStart.edges_stack.top()].bcc = headStart.bcc_counter;
         headStart.edges_stack.pop();
     }
     if (stackIsNotEmpty) {
