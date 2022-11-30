@@ -76,7 +76,7 @@ has_negative_cycle(Digraph& digraph)
       arcs.push_back(arc);
       digraph[source].is_in_vector = true;
 
-      while (digraph[source].predecessor != -1 && !digraph[digraph[source].predecessor].is_in_vector) {
+      while (!digraph[digraph[source].predecessor].is_in_vector) {
         target = source;
         source = digraph[source].predecessor;
         arcs.push_back(boost::edge(source, target, digraph).first);
@@ -85,7 +85,7 @@ has_negative_cycle(Digraph& digraph)
 
       std::reverse(arcs.begin(), arcs.end());
 
-      Walk walk(digraph, 0);
+      Walk walk(digraph, arcs[0].m_source);
 
       for (auto current_arc : arcs) {
         walk.extend(current_arc);
@@ -124,13 +124,10 @@ Loophole build_loophole(const NegativeCycle& negcycle,
                         const Digraph& market)
 {
   /* bogus code */
-  const Arc& b0 = *(out_edges(0, market).first);
-  const Arc& b1 = *(out_edges(1, market).first);
-
-  Walk w(market, 0);
-  w.extend(b0);
-  w.extend(b1);
-
+  Walk w(market, negcycle.get()[0].m_source);  
+  for (const auto arc: negcycle.get()) {
+    w.extend(boost::edge(arc.m_source, arc.m_target, market).first);
+  }
   // encourage RVO
   return Loophole(w);
 }
@@ -139,7 +136,11 @@ FeasibleMultiplier build_feasmult(const FeasiblePotential& feaspot,
                                   const Digraph& aux_digraph,
                                   const Digraph& market)
 {
-  vector<double> z(num_vertices(market), 1.0);
+  vector<double> z;
+
+  for (double value : feaspot.potential()) {
+    z.push_back(exp(-value));
+  }
 
   // encourage RVO
   return FeasibleMultiplier(market, z);
