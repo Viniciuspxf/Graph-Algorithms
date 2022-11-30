@@ -60,7 +60,7 @@ has_negative_cycle(Digraph& digraph)
       auto target = arc.m_target;
       auto cost =  digraph[arc].cost;
 
-      if (digraph[source].distance != INFINITY && digraph[target].distance  > digraph[source].distance + cost) {
+      if (digraph[target].distance  > digraph[source].distance + cost) {
         digraph[target].distance = digraph[source].distance + cost;
         digraph[target].predecessor = source;
       }
@@ -72,7 +72,7 @@ has_negative_cycle(Digraph& digraph)
     auto target = arc.m_target;
     auto cost =  digraph[arc].cost;
 
-    if (digraph[source].distance != INFINITY && digraph[target].distance  > digraph[source].distance + cost) {
+    if (digraph[target].distance  > digraph[source].distance + cost) {
       arcs.push_back(arc);
       digraph[source].is_in_vector = true;
 
@@ -94,28 +94,15 @@ has_negative_cycle(Digraph& digraph)
       return {true, NegativeCycle(walk), boost::none};
     }
   }
-  return {false, boost::none, boost::none};
 
+  
 
+  vector<double> y;
+  for (const auto& vertex : boost::make_iterator_range(vertices(digraph))) {
+    std::cout << "Vertex " << vertex + 1 << " distance:" << digraph[vertex].distance << "\n";
+    y.push_back(digraph[vertex].distance);
+  }
 
-  // Walk walk(digraph, 0);
-  // walk.extend(a0);
-  // walk.extend(a1);
-
-  /* Replace `NegativeCycle(walk)` with `boost::none` in the next
-   * command to trigger "negative cycle reported but not computed".
-   * Comment the whole `return` and uncomment the remaining lines to
-   * exercise construction of a feasible potential. */
-
-  // encourage RVO
-  // return {true, NegativeCycle(walk), boost::none};
-
-  /* Replace `FeasiblePotential(digraph, y)` with `boost::none` in the
-   * next command to trigger "feasible potential reported but not
-   * computed". */
-
-  // encourage RVO
-  vector<double> y(num_vertices(digraph), 0.0);
   return {false, boost::none, FeasiblePotential(digraph, y)};
 }
 

@@ -11,7 +11,7 @@ struct BundledVertex
   int predecessor;
   double distance;
   bool is_in_vector;
-  BundledVertex() : predecessor(-1), distance(INFINITY), is_in_vector(false) {}
+  BundledVertex() : predecessor(-1), distance(0), is_in_vector(false) {}
 };
 
 /* Students may add any number of fields and methods to this struct;
