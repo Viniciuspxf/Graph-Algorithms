@@ -29,13 +29,19 @@ Digraph build_digraph(const Digraph& market)
 
   /* flip some signs in the arc costs below to exercise the many
    * execution pathways */
-
+  Arc a0;
   /* create arcs 01 and 10 */
-  Arc a0, a1;
-  std::tie(a0, std::ignore) = add_edge(0, 1, digraph);
-  digraph[a0].cost = 11.0;
-  std::tie(a1, std::ignore) = add_edge(1, 0, digraph);
-  digraph[a1].cost = -17.0;
+  // Arc a0, a1;
+  // std::tie(a0, std::ignore) = add_edge(0, 1, digraph);
+  // digraph[a0].cost = 11.0;
+  // std::tie(a1, std::ignore) = add_edge(1, 0, digraph);
+  // digraph[a1].cost = -17.0;
+
+  for (const auto& edge : boost::make_iterator_range(edges(market))) {
+    
+    std::tie(a0, std::ignore) = add_edge(edge.m_source, edge.m_target, digraph);
+    digraph[a0].cost = -log(market[edge].cost);
+  }
 
   return digraph;
 }
@@ -45,12 +51,56 @@ std::tuple<bool,
            boost::optional<FeasiblePotential>>
 has_negative_cycle(Digraph& digraph)
 {
-  const Arc& a0 = *(out_edges(0, digraph).first);
-  const Arc& a1 = *(out_edges(1, digraph).first);
+  digraph[0].distance = 0;
+  vector<boost::detail::edge_desc_impl<boost::directed_tag, std::size_t>> arcs;
 
-  Walk walk(digraph, 0);
-  walk.extend(a0);
-  walk.extend(a1);
+  for (size_t i = 0; i < num_vertices(digraph) - 1; i++) {
+    for (const auto& arc : boost::make_iterator_range(edges(digraph))) {
+      auto source = arc.m_source;
+      auto target = arc.m_target;
+      auto cost =  digraph[arc].cost;
+
+      if (digraph[source].distance != INFINITY && digraph[target].distance  > digraph[source].distance + cost) {
+        digraph[target].distance = digraph[source].distance + cost;
+        digraph[target].predecessor = source;
+      }
+   }
+  }
+
+  for (const auto& arc : boost::make_iterator_range(edges(digraph))) {
+    auto source = arc.m_source;
+    auto target = arc.m_target;
+    auto cost =  digraph[arc].cost;
+
+    if (digraph[source].distance != INFINITY && digraph[target].distance  > digraph[source].distance + cost) {
+      arcs.push_back(arc);
+      digraph[source].is_in_vector = true;
+
+      while (digraph[source].predecessor != -1 && !digraph[digraph[source].predecessor].is_in_vector) {
+        target = source;
+        source = digraph[source].predecessor;
+        arcs.push_back(boost::edge(source, target, digraph).first);
+        digraph[source].is_in_vector = true;
+      }
+
+      std::reverse(arcs.begin(), arcs.end());
+
+      Walk walk(digraph, 0);
+
+      for (auto current_arc : arcs) {
+        walk.extend(current_arc);
+      }
+
+      return {true, NegativeCycle(walk), boost::none};
+    }
+  }
+  return {false, boost::none, boost::none};
+
+
+
+  // Walk walk(digraph, 0);
+  // walk.extend(a0);
+  // walk.extend(a1);
 
   /* Replace `NegativeCycle(walk)` with `boost::none` in the next
    * command to trigger "negative cycle reported but not computed".
@@ -58,7 +108,7 @@ has_negative_cycle(Digraph& digraph)
    * exercise construction of a feasible potential. */
 
   // encourage RVO
-  return {true, NegativeCycle(walk), boost::none};
+  // return {true, NegativeCycle(walk), boost::none};
 
   /* Replace `FeasiblePotential(digraph, y)` with `boost::none` in the
    * next command to trigger "feasible potential reported but not
