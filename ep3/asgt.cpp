@@ -24,21 +24,11 @@ using std::vector;
 
 Digraph build_digraph(const Digraph& market)
 {
-  /* placeholder for NRVO */
   Digraph digraph(num_vertices(market));
 
-  /* flip some signs in the arc costs below to exercise the many
-   * execution pathways */
   Arc a0;
-  /* create arcs 01 and 10 */
-  // Arc a0, a1;
-  // std::tie(a0, std::ignore) = add_edge(0, 1, digraph);
-  // digraph[a0].cost = 11.0;
-  // std::tie(a1, std::ignore) = add_edge(1, 0, digraph);
-  // digraph[a1].cost = -17.0;
 
   for (const auto& edge : boost::make_iterator_range(edges(market))) {
-    
     std::tie(a0, std::ignore) = add_edge(edge.m_source, edge.m_target, digraph);
     digraph[a0].cost = -log(market[edge].cost);
   }
@@ -51,7 +41,6 @@ std::tuple<bool,
            boost::optional<FeasiblePotential>>
 has_negative_cycle(Digraph& digraph)
 {
-  digraph[0].distance = 0;
   vector<boost::detail::edge_desc_impl<boost::directed_tag, std::size_t>> arcs;
 
   for (size_t i = 0; i < num_vertices(digraph) - 1; i++) {
@@ -74,13 +63,13 @@ has_negative_cycle(Digraph& digraph)
 
     if (digraph[target].distance  > digraph[source].distance + cost) {
       arcs.push_back(arc);
-      digraph[source].is_in_vector = true;
+      digraph[target].is_in_vector = true;
 
-      while (!digraph[digraph[source].predecessor].is_in_vector) {
+      while (!digraph[source].is_in_vector) {
+        digraph[source].is_in_vector = true;
         target = source;
         source = digraph[source].predecessor;
         arcs.push_back(boost::edge(source, target, digraph).first);
-        digraph[source].is_in_vector = true;
       }
 
       std::reverse(arcs.begin(), arcs.end());
@@ -89,6 +78,9 @@ has_negative_cycle(Digraph& digraph)
 
       for (auto current_arc : arcs) {
         walk.extend(current_arc);
+
+        if (current_arc.m_target == arcs[0].m_source)
+          break;
       }
 
       return {true, NegativeCycle(walk), boost::none};
@@ -99,7 +91,6 @@ has_negative_cycle(Digraph& digraph)
 
   vector<double> y;
   for (const auto& vertex : boost::make_iterator_range(vertices(digraph))) {
-    std::cout << "Vertex " << vertex + 1 << " distance:" << digraph[vertex].distance << "\n";
     y.push_back(digraph[vertex].distance);
   }
 
@@ -110,12 +101,10 @@ Loophole build_loophole(const NegativeCycle& negcycle,
                         const Digraph& aux_digraph,
                         const Digraph& market)
 {
-  /* bogus code */
   Walk w(market, negcycle.get()[0].m_source);  
   for (const auto arc: negcycle.get()) {
     w.extend(boost::edge(arc.m_source, arc.m_target, market).first);
   }
-  // encourage RVO
   return Loophole(w);
 }
 
@@ -128,7 +117,5 @@ FeasibleMultiplier build_feasmult(const FeasiblePotential& feaspot,
   for (double value : feaspot.potential()) {
     z.push_back(exp(-value));
   }
-
-  // encourage RVO
   return FeasibleMultiplier(market, z);
 }
